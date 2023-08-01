@@ -1,2 +1,6 @@
 /pdf.js
 .*.swp
+sh
+node_modules
+package-lock.json
+

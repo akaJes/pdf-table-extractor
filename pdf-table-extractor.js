@@ -120,7 +120,6 @@ pdf_table_extractor = function(doc){
                   } else {
                   }
               }
-
               edges = edges.map(function(edge){
                       var point1 = applyTransform_fn([edge.x, edge.y], edge.transform);
                       var point2 = applyTransform_fn([edge.x + edge.width, edge.y + edge.height], edge.transform);
@@ -132,10 +131,11 @@ pdf_table_extractor = function(doc){
                       };
               });
               // merge rectangle to verticle lines and horizon lines
+              const proxime = v => Math.abs(v) < 0.1 ? 0 : v
               edges1 = JSON.parse(JSON.stringify(edges));
-              edges1.sort(function(a, b){ return (a.x - b.x) || (a.y - b.y); });
+              edges1.sort(function(a, b){ return proxime(a.x - b.x) || (a.y - b.y); });
               edges2 = JSON.parse(JSON.stringify(edges));
-              edges2.sort(function(a, b){ return (a.y - b.y) || (a.x - b.x); });
+              edges2.sort(function(a, b){ return proxime(a.y - b.y) || (a.x - b.x); });
 
               // get verticle lines
               var current_x = null;
@@ -497,3 +497,20 @@ pdf_table_extractor = function(doc){
           return result;
   });
 };
+if (typeof module !== 'undefined') {
+  const fs = require('fs')
+  PDFJS = require('pdfjs-dist/build/pdf.js');
+  PDFJS.workerSrc = 'pdfjs-dist/build/pdf.worker.js';
+  PDFJS.cMapUrl = 'pdfjs-dist/cmaps/';
+  PDFJS.cMapPacked = true;
+  pdfjsLib = PDFJS
+  module.exports = function(pdfPath, success, error) {
+    var data = new Uint8Array(fs.readFileSync(pdfPath));
+
+    // Will be using promises to load document, pages and misc data instead of
+    // callback.
+    PDFJS.getDocument(data).promise
+        .then(pdf_table_extractor)
+        .then(success, error);
+  }
+}
